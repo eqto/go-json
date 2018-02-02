@@ -52,12 +52,14 @@ func (j *Object) GetDataMap() map[string]interface{}   {
     return j.dataMap
 }
 
+//SetDataMap ...
+func (j *Object) SetDataMap(dataMap map[string]interface{}) {
+	j.dataMap = dataMap
+}
+
 //GetInterface ...
 func (j *Object) GetInterface(path string) interface{}	{
-	if obj := j.get(path); obj != nil	{
-		return obj
-	}
-	return nil
+	return j.get(path)
 }
 
 //GetArray ...
