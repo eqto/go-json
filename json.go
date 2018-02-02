@@ -1,7 +1,7 @@
 package json
 
 import (
-    "encoding/json"
+	"encoding/json"
     "strings"
     "errors"
     "strconv"
@@ -277,8 +277,8 @@ func (j *Object) get(path string) interface{} {
 
 //Parse ...
 func Parse(data []byte) *Object    {
-    jo := Object{}
-    if e := json.Unmarshal(data, &jo.dataMap); e == nil	{
+	jo := Object{}
+    if e := json.Unmarshal(data, &jo.dataMap); e != nil	{
 		return nil
 	}
 	return &jo
