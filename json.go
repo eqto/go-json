@@ -192,6 +192,15 @@ func (j *Object) GetStringD(path string, defValue string) string {
 
 //Put ...
 func (j *Object) Put(path string, value interface{}) *Object    {
+	switch castedValue := value.(type) {
+	case []Object:
+		var mapArray []map[string]interface{}
+		println(len(castedValue))
+		for _, val := range castedValue	{
+			mapArray = append(mapArray, val.dataMap)
+		}
+		value = mapArray
+	}
     j.putE(path, value)
     return j
 }
