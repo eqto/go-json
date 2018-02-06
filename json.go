@@ -195,7 +195,6 @@ func (j *Object) Put(path string, value interface{}) *Object    {
 	switch castedValue := value.(type) {
 	case []Object:
 		var mapArray []map[string]interface{}
-		println(len(castedValue))
 		for _, val := range castedValue	{
 			mapArray = append(mapArray, val.dataMap)
 		}
@@ -298,9 +297,6 @@ func Parse(data []byte) *Object    {
 //ParseArray ...
 func ParseArray(data []byte) []Object    {
 	data = []byte(`{"data":` + string(data) + `}`)
-	jo := Object{}
-    if e := json.Unmarshal(data, &jo.dataMap); e != nil	{
-		return nil
-	}
+	jo := Parse(data)
 	return jo.GetArray(`data`)
 }
