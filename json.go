@@ -1,12 +1,12 @@
 package json
 
 import (
+	"reflect"
 	"bytes"
 	"encoding/json"
     "strings"
     "errors"
     "strconv"
-    "go/types"
 )
 
 /**
@@ -205,9 +205,8 @@ func (j *Object) Put(path string, value interface{}) *Object    {
 }
 
 func convertValue(value interface{}) interface{}	{
-	//if pointer get the value
-    if ptr, ok := value.(types.Pointer); ok	{
-        value = ptr.Elem()
+	if val := reflect.ValueOf(value); val.Kind() == reflect.Ptr	{
+		value = val.Elem().Interface()
 	}
 	if arr, ok := value.([]Object); ok	{
         arrayMap := []interface{}{}
