@@ -123,7 +123,7 @@ func (j *Object) GetFloatD(path string, defValue float64) float64 {
 func (j *Object) GetInt(path string) *int {
     obj := j.get(path)
 
-    switch obj.(type) {
+    switch i := obj.(type) {
     case float64:
         float, _ := obj.(float64)
         val := int(float)
@@ -134,8 +134,10 @@ func (j *Object) GetInt(path string) *int {
         if e != nil {
             return nil
         }
-        return &val
-    default:
+		return &val
+	case int:
+		return &i
+	default:
         return nil
     }
 }
