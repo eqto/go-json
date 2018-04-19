@@ -91,8 +91,8 @@ func (j *Object) GetJSONObject(path string) *Object {
 	return nil
 }
 
-//GetFloat ...
-func (j *Object) GetFloat(path string) *float64 {
+//GetFloatNull ...
+func (j *Object) GetFloatNull(path string) *float64 {
 	obj := j.get(path)
 
 	switch obj.(type) {
@@ -113,19 +113,19 @@ func (j *Object) GetFloat(path string) *float64 {
 
 //GetFloatOr ...
 func (j *Object) GetFloatOr(path string, defValue float64) float64 {
-	if val := j.GetFloat(path); val != nil {
+	if val := j.GetFloatNull(path); val != nil {
 		return *val
 	}
 	return defValue
 }
 
-//GetFloatD ...
-func (j *Object) GetFloatD(path string) float64 {
+//GetFloat ...
+func (j *Object) GetFloat(path string) float64 {
 	return j.GetFloatOr(path, 0)
 }
 
-//GetInt ...
-func (j *Object) GetInt(path string) *int {
+//GetIntNull ...
+func (j *Object) GetIntNull(path string) *int {
 	obj := j.get(path)
 
 	switch i := obj.(type) {
@@ -149,19 +149,19 @@ func (j *Object) GetInt(path string) *int {
 
 //GetIntOr ...
 func (j *Object) GetIntOr(path string, defValue int) int {
-	if val := j.GetInt(path); val != nil {
+	if val := j.GetIntNull(path); val != nil {
 		return *val
 	}
 	return defValue
 }
 
-//GetIntD ...
-func (j *Object) GetIntD(path string) int {
+//GetInt ...
+func (j *Object) GetInt(path string) int {
 	return j.GetIntOr(path, 0)
 }
 
-//GetBoolean ...
-func (j *Object) GetBoolean(path string) *bool {
+//GetBooleanNull ...
+func (j *Object) GetBooleanNull(path string) *bool {
 	obj := j.get(path)
 	if b, ok := obj.(bool); ok {
 		return &b
@@ -171,19 +171,19 @@ func (j *Object) GetBoolean(path string) *bool {
 
 //GetBooleanOr ...
 func (j *Object) GetBooleanOr(path string, defValue bool) bool {
-	if val := j.GetBoolean(path); val != nil {
+	if val := j.GetBooleanNull(path); val != nil {
 		return *val
 	}
 	return defValue
 }
 
-//GetBooleanD ...
-func (j *Object) GetBooleanD(path string) bool {
+//GetBoolean ...
+func (j *Object) GetBoolean(path string) bool {
 	return j.GetBooleanOr(path, false)
 }
 
-//GetString ...
-func (j *Object) GetString(path string) *string {
+//GetStringNull ...
+func (j *Object) GetStringNull(path string) *string {
 	obj := j.get(path)
 
 	switch obj.(type) {
@@ -201,14 +201,14 @@ func (j *Object) GetString(path string) *string {
 
 //GetStringOr ...
 func (j *Object) GetStringOr(path string, defValue string) string {
-	if val := j.GetString(path); val != nil {
+	if val := j.GetStringNull(path); val != nil {
 		return *val
 	}
 	return defValue
 }
 
-//GetStringD ...
-func (j *Object) GetStringD(path string) string {
+//GetString ...
+func (j *Object) GetString(path string) string {
 	return j.GetStringOr(path, ``)
 }
 
