@@ -310,6 +310,11 @@ func Parse(data []byte) *Object {
 	return &jo
 }
 
+//ParseString ...
+func ParseString(data string) *Object {
+	return Parse([]byte(data))
+}
+
 //ParseArray ...
 func ParseArray(data []byte) []Object {
 	data = []byte(`{"data":` + string(data) + `}`)
