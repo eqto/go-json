@@ -14,13 +14,11 @@ import (
  */
 
 //Object ...
-type Object struct {
-	dataMap map[string]interface{}
-}
+type Object map[string]interface{}
 
 //ToFormattedBytes ...
-func (j *Object) ToFormattedBytes() []byte {
-	data, e := json.MarshalIndent(j.dataMap, ``, `  `)
+func (j Object) ToFormattedBytes() []byte {
+	data, e := json.MarshalIndent(j, ``, `  `)
 	if e != nil {
 		return nil
 	}
@@ -28,18 +26,18 @@ func (j *Object) ToFormattedBytes() []byte {
 }
 
 //ToBytes ...
-func (j *Object) ToBytes() []byte {
-	if len(j.dataMap) == 0 {
+func (j Object) ToBytes() []byte {
+	if len(j) == 0 {
 		return []byte(`{}`)
 	}
-	if data, e := json.Marshal(j.dataMap); e == nil {
+	if data, e := json.Marshal(j); e == nil {
 		return data
 	}
 	return nil
 }
 
 //ToString ...
-func (j *Object) ToString() string {
+func (j Object) ToString() string {
 	data := j.ToBytes()
 	str := `{}`
 	if data != nil {
@@ -48,23 +46,13 @@ func (j *Object) ToString() string {
 	return str
 }
 
-//GetDataMap ...
-func (j *Object) GetDataMap() map[string]interface{} {
-	return j.dataMap
-}
-
-//SetDataMap ...
-func (j *Object) SetDataMap(dataMap map[string]interface{}) {
-	j.dataMap = dataMap
-}
-
 //GetInterface ...
-func (j *Object) GetInterface(path string) interface{} {
+func (j Object) GetInterface(path string) interface{} {
 	return j.get(path)
 }
 
 //GetArray ...
-func (j *Object) GetArray(path string) []Object {
+func (j Object) GetArray(path string) []Object {
 	obj := j.get(path)
 
 	values, ok := obj.([]interface{})
@@ -74,25 +62,24 @@ func (j *Object) GetArray(path string) []Object {
 	}
 	var arr []Object
 	for _, value := range values {
-		jo := Object{dataMap: value.(map[string]interface{})}
+		jo := value.(map[string]interface{})
 		arr = append(arr, jo)
 	}
 	return arr
 }
 
 //GetJSONObject ...
-func (j *Object) GetJSONObject(path string) *Object {
+func (j Object) GetJSONObject(path string) Object {
 	obj := j.get(path)
 
 	if v, ok := obj.(map[string]interface{}); ok {
-		jo := Object{dataMap: v}
-		return &jo
+		return Object(v)
 	}
 	return nil
 }
 
 //GetFloatNull ...
-func (j *Object) GetFloatNull(path string) *float64 {
+func (j Object) GetFloatNull(path string) *float64 {
 	obj := j.get(path)
 
 	switch obj.(type) {
@@ -112,7 +99,7 @@ func (j *Object) GetFloatNull(path string) *float64 {
 }
 
 //GetFloatOr ...
-func (j *Object) GetFloatOr(path string, defValue float64) float64 {
+func (j Object) GetFloatOr(path string, defValue float64) float64 {
 	if val := j.GetFloatNull(path); val != nil {
 		return *val
 	}
@@ -120,12 +107,12 @@ func (j *Object) GetFloatOr(path string, defValue float64) float64 {
 }
 
 //GetFloat ...
-func (j *Object) GetFloat(path string) float64 {
+func (j Object) GetFloat(path string) float64 {
 	return j.GetFloatOr(path, 0)
 }
 
 //GetIntNull ...
-func (j *Object) GetIntNull(path string) *int {
+func (j  Object) GetIntNull(path string) *int {
 	obj := j.get(path)
 
 	switch i := obj.(type) {
@@ -148,7 +135,7 @@ func (j *Object) GetIntNull(path string) *int {
 }
 
 //GetIntOr ...
-func (j *Object) GetIntOr(path string, defValue int) int {
+func (j Object) GetIntOr(path string, defValue int) int {
 	if val := j.GetIntNull(path); val != nil {
 		return *val
 	}
@@ -156,12 +143,12 @@ func (j *Object) GetIntOr(path string, defValue int) int {
 }
 
 //GetInt ...
-func (j *Object) GetInt(path string) int {
+func (j Object) GetInt(path string) int {
 	return j.GetIntOr(path, 0)
 }
 
 //GetBooleanNull ...
-func (j *Object) GetBooleanNull(path string) *bool {
+func (j Object) GetBooleanNull(path string) *bool {
 	obj := j.get(path)
 	if b, ok := obj.(bool); ok {
 		return &b
@@ -170,7 +157,7 @@ func (j *Object) GetBooleanNull(path string) *bool {
 }
 
 //GetBooleanOr ...
-func (j *Object) GetBooleanOr(path string, defValue bool) bool {
+func (j Object) GetBooleanOr(path string, defValue bool) bool {
 	if val := j.GetBooleanNull(path); val != nil {
 		return *val
 	}
@@ -178,12 +165,12 @@ func (j *Object) GetBooleanOr(path string, defValue bool) bool {
 }
 
 //GetBoolean ...
-func (j *Object) GetBoolean(path string) bool {
+func (j Object) GetBoolean(path string) bool {
 	return j.GetBooleanOr(path, false)
 }
 
 //GetStringNull ...
-func (j *Object) GetStringNull(path string) *string {
+func (j Object) GetStringNull(path string) *string {
 	obj := j.get(path)
 
 	switch obj.(type) {
@@ -200,7 +187,7 @@ func (j *Object) GetStringNull(path string) *string {
 }
 
 //GetStringOr ...
-func (j *Object) GetStringOr(path string, defValue string) string {
+func (j Object) GetStringOr(path string, defValue string) string {
 	if val := j.GetStringNull(path); val != nil {
 		return *val
 	}
@@ -208,12 +195,12 @@ func (j *Object) GetStringOr(path string, defValue string) string {
 }
 
 //GetString ...
-func (j *Object) GetString(path string) string {
+func (j Object) GetString(path string) string {
 	return j.GetStringOr(path, ``)
 }
 
 //Put ...
-func (j *Object) Put(path string, value interface{}) *Object {
+func (j Object) Put(path string, value interface{}) Object {
 	j.putE(path, value)
 	return j
 }
@@ -228,7 +215,7 @@ func convertValue(value interface{}) interface{} {
 	if arr, ok := value.([]Object); ok {
 		arrayMap := []interface{}{}
 		for _, jo := range arr {
-			arrayMap = append(arrayMap, convertValue(jo.dataMap))
+			arrayMap = append(arrayMap, convertValue(jo))
 		}
 		return arrayMap
 	} else if m, ok := value.(map[string]interface{}); ok {
@@ -237,21 +224,21 @@ func convertValue(value interface{}) interface{} {
 		}
 		return m
 	} else if js, ok := value.(Object); ok {
-		return js.dataMap
+		return js
 	} else if byteData, ok := value.([]byte); ok {
 		return string(byteData)
 	}
 	return value
 }
 
-func (j *Object) putE(path string, value interface{}) error {
+func (j Object) putE(path string, value interface{}) error {
 	value = convertValue(value)
 
-	if j.dataMap == nil {
-		j.dataMap = make(map[string]interface{})
-	}
+	// if j.dataMap == nil {
+	// 	j.dataMap = make(map[string]interface{})
+	// }
 
-	rootMap := j.dataMap
+	rootMap := j
 	currentMap := rootMap
 
 	splittedPath := strings.Split(path, `.`)
@@ -269,28 +256,27 @@ func (j *Object) putE(path string, value interface{}) error {
 			currentMap[pathItem] = value
 		}
 	}
-	j.dataMap = rootMap
+	j = rootMap
 	return nil
 }
 
-func (j *Object) get(path string) interface{} {
+func (j Object) get(path string) interface{} {
 	splittedPath := strings.Split(path, `.`)
 
-	if j == nil {
-		return nil
-	}
-	var jsonMap interface{}
-	jsonMap = j.dataMap
+	var jsonMap Object
+	jsonMap = j
 	var val interface{}
 	for _, pathItem := range splittedPath {
 		if jsonMap == nil {
 			return nil
 		}
-		val = jsonMap.(map[string]interface{})[pathItem]
+		val = jsonMap[pathItem]
 
-		switch val.(type) {
-		case map[string]interface{}:
+		switch val := val.(type) {
+		case Object:
 			jsonMap = val
+		case map[string]interface{}:
+			jsonMap = Object(val)
 		case []interface{}:
 			return val
 		default:
@@ -301,17 +287,17 @@ func (j *Object) get(path string) interface{} {
 }
 
 //Parse ...
-func Parse(data []byte) *Object {
+func Parse(data []byte) Object {
 	data = bytes.Trim(data, "\r\n\t ")
 	jo := Object{}
-	if e := json.Unmarshal(data, &jo.dataMap); e != nil {
+	if e := json.Unmarshal(data, &jo); e != nil {
 		return nil
 	}
-	return &jo
+	return jo
 }
 
 //ParseString ...
-func ParseString(data string) *Object {
+func ParseString(data string) Object {
 	return Parse([]byte(data))
 }
 
