@@ -234,10 +234,6 @@ func convertValue(value interface{}) interface{} {
 func (j Object) putE(path string, value interface{}) error {
 	value = convertValue(value)
 
-	// if j.dataMap == nil {
-	// 	j.dataMap = make(map[string]interface{})
-	// }
-
 	rootMap := j
 	currentMap := rootMap
 
