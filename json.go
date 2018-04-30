@@ -25,6 +25,11 @@ func (j Object) ToFormattedBytes() []byte {
 	return data
 }
 
+//ToFormattedString ...
+func (j Object) ToFormattedString() string {
+	return string(j.ToFormattedBytes())
+}
+
 //ToBytes ...
 func (j Object) ToBytes() []byte {
 	if len(j) == 0 {
@@ -211,7 +216,7 @@ func convertValue(value interface{}) interface{} {
 			return nil
 		}
 		value = val.Elem().Interface()
-	}
+	} 
 	if arr, ok := value.([]Object); ok {
 		arrayMap := []interface{}{}
 		for _, jo := range arr {
