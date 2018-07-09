@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -117,7 +118,7 @@ func (j Object) GetFloat(path string) float64 {
 }
 
 //GetIntNull ...
-func (j  Object) GetIntNull(path string) *int {
+func (j Object) GetIntNull(path string) *int {
 	obj := j.get(path)
 
 	switch i := obj.(type) {
@@ -216,7 +217,7 @@ func convertValue(value interface{}) interface{} {
 			return nil
 		}
 		value = val.Elem().Interface()
-	} 
+	}
 	if arr, ok := value.([]Object); ok {
 		arrayMap := []interface{}{}
 		for _, jo := range arr {
@@ -307,4 +308,13 @@ func ParseArray(data []byte) []Object {
 	data = []byte(`{"data":` + string(data) + `}`)
 	jo := Parse(data)
 	return jo.GetArray(`data`)
+}
+
+//ParseFile ...
+func ParseFile(filename string) Object {
+	data, e := ioutil.ReadFile(filename)
+	if e != nil {
+		return nil
+	}
+	return Parse(data)
 }
