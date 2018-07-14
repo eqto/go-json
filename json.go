@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"gitlab.com/tuxer/go-db"
+	"gitlab.com/tuxer/go-logger"
 	"io/ioutil"
 	"reflect"
 	"strconv"
@@ -54,12 +56,12 @@ func (j Object) ToString() string {
 
 //GetInterface ...
 func (j Object) GetInterface(path string) interface{} {
-	return j.get(path)
+	return j.Get(path)
 }
 
 //GetArray ...
 func (j Object) GetArray(path string) []Object {
-	obj := j.get(path)
+	obj := j.Get(path)
 
 	values, ok := obj.([]interface{})
 
@@ -76,7 +78,7 @@ func (j Object) GetArray(path string) []Object {
 
 //GetJSONObject ...
 func (j Object) GetJSONObject(path string) Object {
-	obj := j.get(path)
+	obj := j.Get(path)
 
 	if v, ok := obj.(map[string]interface{}); ok {
 		return Object(v)
@@ -86,7 +88,7 @@ func (j Object) GetJSONObject(path string) Object {
 
 //GetFloatNull ...
 func (j Object) GetFloatNull(path string) *float64 {
-	obj := j.get(path)
+	obj := j.Get(path)
 
 	switch obj.(type) {
 	case float64:
@@ -119,7 +121,7 @@ func (j Object) GetFloat(path string) float64 {
 
 //GetIntNull ...
 func (j Object) GetIntNull(path string) *int {
-	obj := j.get(path)
+	obj := j.Get(path)
 
 	switch i := obj.(type) {
 	case float64:
@@ -155,7 +157,7 @@ func (j Object) GetInt(path string) int {
 
 //GetBooleanNull ...
 func (j Object) GetBooleanNull(path string) *bool {
-	obj := j.get(path)
+	obj := j.Get(path)
 	if b, ok := obj.(bool); ok {
 		return &b
 	}
@@ -177,7 +179,7 @@ func (j Object) GetBoolean(path string) bool {
 
 //GetStringNull ...
 func (j Object) GetStringNull(path string) *string {
-	obj := j.get(path)
+	obj := j.Get(path)
 
 	switch obj.(type) {
 	case string:
@@ -262,7 +264,7 @@ func (j Object) putE(path string, value interface{}) error {
 	return nil
 }
 
-func (j Object) get(path string) interface{} {
+func (j Object) Get(path string) interface{} {
 	splittedPath := strings.Split(path, `.`)
 
 	var jsonMap Object
@@ -286,6 +288,23 @@ func (j Object) get(path string) interface{} {
 		}
 	}
 	return val
+}
+
+//Marshal ...
+func Marshal(obj interface{}) ([]byte, error) {
+	switch obj.(type) {
+	case []db.Resultset:
+	case db.Resultset:
+	default:
+		return nil, errors.New(`failed marshalling, object type not recognized`)
+	}
+	if data, e := json.Marshal(obj); e == nil {
+		log.D(string(data))
+		return data, nil
+	} else {
+		log.D(e)
+		return nil, e
+	}
 }
 
 //Parse ...
