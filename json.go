@@ -181,17 +181,16 @@ func (j Object) GetBoolean(path string) bool {
 func (j Object) GetStringNull(path string) *string {
 	obj := j.Get(path)
 
-	switch obj.(type) {
+	str := ``
+	switch obj := obj.(type) {
 	case string:
-		str, _ := obj.(string)
-		return &str
+		str = obj
 	case float64:
-		float, _ := obj.(float64)
-		str := strconv.FormatFloat(float, 'f', -1, 64)
-		return &str
+		str = strconv.FormatFloat(obj, 'f', -1, 64)
 	default:
 		return nil
 	}
+	return &str
 }
 
 //GetStringOr ...
