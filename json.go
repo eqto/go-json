@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"gitlab.com/tuxer/go-db"
-	"gitlab.com/tuxer/go-logger"
 	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"gitlab.com/tuxer/go-db"
+	"gitlab.com/tuxer/go-logger"
 )
 
 /**
@@ -62,18 +63,27 @@ func (j Object) GetInterface(path string) interface{} {
 //GetArray ...
 func (j Object) GetArray(path string) []Object {
 	obj := j.Get(path)
-
-	values, ok := obj.([]interface{})
-
-	if !ok {
-		return nil
+	if values, ok := obj.([]interface{}); ok {
+		var arr []Object
+		for _, value := range values {
+			arr = append(arr, value.(map[string]interface{}))
+		}
+		return arr
 	}
-	var arr []Object
-	for _, value := range values {
-		jo := value.(map[string]interface{})
-		arr = append(arr, jo)
+	return nil
+}
+
+//GetIntArray ...
+func (j Object) GetIntArray(path string) []int {
+	obj := j.Get(path)
+	if values, ok := obj.([]interface{}); ok {
+		var arr []int
+		for _, value := range values {
+			arr = append(arr, int(value.(float64)))
+		}
+		return arr
 	}
-	return arr
+	return nil
 }
 
 //GetJSONObject ...
