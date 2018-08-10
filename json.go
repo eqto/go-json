@@ -244,6 +244,8 @@ func convertValue(value interface{}) interface{} {
 		return js
 	} else if byteData, ok := value.([]byte); ok {
 		return string(byteData)
+	} else if intData, ok := value.(int); ok {
+		return float64(intData)
 	}
 	return value
 }
@@ -257,13 +259,13 @@ func (j Object) putE(path string, value interface{}) error {
 	splittedPath := strings.Split(path, `.`)
 	for index, pathItem := range splittedPath {
 		if index < len(splittedPath)-1 {
-			_, ok := currentMap[pathItem]
-			if !ok {
+			if _, ok := currentMap[pathItem]; !ok {
 				currentMap[pathItem] = make(map[string]interface{})
 			}
-			currentMap, ok = currentMap[pathItem].(map[string]interface{})
-			if !ok {
+			if curr, ok := currentMap[pathItem].(map[string]interface{}); !ok {
 				return errors.New(pathItem + `is not a json object`)
+			} else {
+				currentMap = curr
 			}
 		} else {
 			currentMap[pathItem] = value
