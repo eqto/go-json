@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"gitlab.com/tuxer/go-db"
-	"gitlab.com/tuxer/go-logger"
 )
 
 /**
@@ -268,7 +267,21 @@ func (j Object) putE(path string, value interface{}) error {
 				currentMap = curr
 			}
 		} else {
-			currentMap[pathItem] = value
+			v := reflect.ValueOf(value)
+			if v.Kind() == reflect.Map {
+				mapVal := make(map[string]interface{})
+				for _, key := range v.MapKeys() {
+					strct := v.MapIndex(key)
+					mapVal[key.Interface().(string)] = strct.Interface()
+				}
+				currentMap[pathItem] = mapVal
+			} else {
+				if m, ok := value.(map[string]interface{}); ok {
+					currentMap[pathItem] = m
+				} else {
+					currentMap[pathItem] = value
+				}
+			}
 		}
 	}
 	j = rootMap
@@ -310,10 +323,8 @@ func Marshal(obj interface{}) ([]byte, error) {
 		return nil, errors.New(`failed marshalling, object type not recognized`)
 	}
 	if data, e := json.Marshal(obj); e == nil {
-		log.D(string(data))
 		return data, nil
 	} else {
-		log.D(e)
 		return nil, e
 	}
 }
