@@ -339,6 +339,14 @@ func Parse(data []byte) Object {
 	return jo
 }
 
+//ParseObject ...
+func ParseObject(data interface{}) Object {
+	if marshalled, e := json.Marshal(data); e == nil {
+		return Parse(marshalled)
+	}
+	return nil
+}
+
 //ParseString ...
 func ParseString(data string) Object {
 	return Parse([]byte(data))
