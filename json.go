@@ -85,6 +85,19 @@ func (j Object) GetIntArray(path string) []int {
 	return nil
 }
 
+//GetStringArray ...
+func (j Object) GetStringArray(path string) []string {
+	obj := j.Get(path)
+	if values, ok := obj.([]interface{}); ok {
+		var arr []string
+		for _, value := range values {
+			arr = append(arr, value.(string))
+		}
+		return arr
+	}
+	return nil
+}
+
 //GetJSONObject ...
 func (j Object) GetJSONObject(path string) Object {
 	obj := j.Get(path)
