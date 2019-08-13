@@ -65,7 +65,12 @@ func (j Object) GetArray(path string) []Object {
 	if values, ok := obj.([]interface{}); ok {
 		var arr []Object
 		for _, value := range values {
-			arr = append(arr, value.(map[string]interface{}))
+			switch value.(type) {
+			case Object:
+				arr = append(arr, value.(Object))
+			default:
+				arr = append(arr, value.(map[string]interface{}))
+			}
 		}
 		return arr
 	}
