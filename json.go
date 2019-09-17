@@ -332,6 +332,22 @@ func (j Object) Get(path string) interface{} {
 	return val
 }
 
+//Remove ...
+func (j Object) Remove(path string) {
+	index := strings.LastIndex(path, `.`)
+	if index >= 0 {
+		key := path[index+1:]
+		path := path[0:index]
+		val := j.Get(path)
+		if val, ok := val.(map[string]interface{}); ok {
+			delete(val, key)
+			j.Put(path, val)
+		}
+	} else {
+		delete(j, path)
+	}
+}
+
 //Marshal ...
 func Marshal(obj interface{}) ([]byte, error) {
 	switch obj.(type) {
