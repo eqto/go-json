@@ -157,10 +157,11 @@ func (j Object) GetIntNull(path string) *int {
 		return &val
 	case string:
 		str, _ := obj.(string)
-		val, e := strconv.Atoi(str)
+		f, e := strconv.ParseFloat(str, 64)
 		if e != nil {
 			return nil
 		}
+		val := int(f)
 		return &val
 	case int:
 		return &i
