@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"gitlab.com/tuxer/go-db"
 )
 
 /**
@@ -307,6 +305,7 @@ func (j Object) putE(path string, value interface{}) error {
 	return nil
 }
 
+//Get ...
 func (j Object) Get(path string) interface{} {
 	splittedPath := strings.Split(path, `.`)
 
@@ -351,12 +350,6 @@ func (j Object) Remove(path string) {
 
 //Marshal ...
 func Marshal(obj interface{}) ([]byte, error) {
-	switch obj.(type) {
-	case []db.Resultset:
-	case db.Resultset:
-	default:
-		return nil, errors.New(`failed marshalling, object type not recognized`)
-	}
 	if data, e := json.Marshal(obj); e == nil {
 		return data, nil
 	} else {
