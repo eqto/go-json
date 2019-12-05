@@ -388,10 +388,10 @@ func ParseArray(data []byte) []Object {
 }
 
 //ParseFile ...
-func ParseFile(filename string) Object {
+func ParseFile(filename string) (Object, error) {
 	data, e := ioutil.ReadFile(filename)
 	if e != nil {
-		return nil
+		return nil, e
 	}
-	return Parse(data)
+	return Parse(data), nil
 }
