@@ -324,12 +324,15 @@ func (j Object) putE(path string, value interface{}) error {
 			if v.Kind() == reflect.Map {
 				mapVal := make(map[string]interface{})
 				for _, key := range v.MapKeys() {
-					strct := v.MapIndex(key)
-					mapVal[key.Interface().(string)] = strct.Interface()
+					val := v.MapIndex(key)
+					mapVal[key.Interface().(string)] = convertValue(val.Interface())
 				}
 				currentMap[pathItem] = mapVal
 			} else {
 				if m, ok := value.(map[string]interface{}); ok {
+					for key, val := range m {
+						m[key] = convertValue(val)
+					}
 					currentMap[pathItem] = m
 				} else {
 					currentMap[pathItem] = value
