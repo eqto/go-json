@@ -81,7 +81,7 @@ func (j Object) GetIntArray(path string) []int {
 	if values, ok := obj.([]interface{}); ok {
 		var arr []int
 		for _, value := range values {
-			arr = append(arr, int(value.(float64)))
+			arr = append(arr, value.(int))
 		}
 		return arr
 	}
@@ -115,17 +115,21 @@ func (j Object) GetJSONObject(path string) Object {
 func (j Object) GetFloatNull(path string) *float64 {
 	obj := j.Get(path)
 
-	switch obj.(type) {
+	switch val := obj.(type) {
 	case float64:
-		float, _ := obj.(float64)
+		return &val
+	case int:
+		float := float64(val)
+		return &float
+	case uint:
+		float := float64(val)
 		return &float
 	case string:
-		str, _ := obj.(string)
-		val, e := strconv.ParseFloat(str, 64)
+		float, e := strconv.ParseFloat(val, 64)
 		if e != nil {
 			return nil
 		}
-		return &val
+		return &float
 	default:
 		return nil
 	}
@@ -146,26 +150,23 @@ func (j Object) GetFloat(path string) float64 {
 
 //GetIntNull ...
 func (j Object) GetIntNull(path string) *int {
-	obj := j.Get(path)
-
-	switch i := obj.(type) {
-	case float64:
-		float, _ := obj.(float64)
-		val := int(float)
+	switch val := j.Get(path).(type) {
+	case int:
 		return &val
+	case uint:
+		intVal := int(val)
+		return &intVal
+	case float64:
+		intVal := int(val)
+		return &intVal
 	case string:
-		str, _ := obj.(string)
-		f, e := strconv.ParseFloat(str, 64)
+		intVal, e := strconv.Atoi(val)
 		if e != nil {
 			return nil
 		}
-		val := int(f)
-		return &val
-	case int:
-		return &i
-	default:
-		return nil
+		return &intVal
 	}
+	return nil
 }
 
 //GetIntOr ...
@@ -207,16 +208,20 @@ func (j Object) GetBoolean(path string) bool {
 func (j Object) GetStringNull(path string) *string {
 	obj := j.Get(path)
 
-	str := ``
-	switch obj := obj.(type) {
+	switch val := obj.(type) {
 	case string:
-		str = obj
+		return &val
 	case float64:
-		str = strconv.FormatFloat(obj, 'f', -1, 64)
-	default:
-		return nil
+		str := strconv.FormatFloat(val, 'f', -1, 64)
+		return &str
+	case int:
+		str := strconv.Itoa(val)
+		return &str
+	case uint:
+		str := strconv.FormatUint(uint64(val), 10)
+		return &str
 	}
-	return &str
+	return nil
 }
 
 //GetStringOr ...
@@ -245,23 +250,46 @@ func convertValue(value interface{}) interface{} {
 		}
 		value = val.Elem().Interface()
 	}
-	if arr, ok := value.([]Object); ok {
+	switch v := value.(type) {
+	case []Object:
 		arrayMap := []interface{}{}
-		for _, jo := range arr {
+		for _, jo := range v {
 			arrayMap = append(arrayMap, convertValue(jo))
 		}
 		return arrayMap
-	} else if m, ok := value.(map[string]interface{}); ok {
-		for key, val := range m {
-			m[key] = convertValue(val)
+	case map[string]interface{}:
+		for key, val := range v {
+			v[key] = convertValue(val)
 		}
-		return m
-	} else if js, ok := value.(Object); ok {
-		return js
-	} else if byteData, ok := value.([]byte); ok {
-		return string(byteData)
-	} else if intData, ok := value.(int); ok {
-		return float64(intData)
+		return v
+	case Object:
+		return v
+	case []byte:
+		return string(v)
+	case float32:
+		return float64(v)
+	case float64:
+		return v
+	case int:
+		return v
+	case int8:
+		return int(v)
+	case int16:
+		return int(v)
+	case int32:
+		return int(v)
+	case int64:
+		return int(v)
+	case uint:
+		return v
+	case uint8:
+		return uint(v)
+	case uint16:
+		return uint(v)
+	case uint32:
+		return uint(v)
+	case uint64:
+		return uint(v)
 	}
 	return value
 }
