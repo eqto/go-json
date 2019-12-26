@@ -244,11 +244,17 @@ func (j Object) Put(path string, value interface{}) Object {
 }
 
 func convertValue(value interface{}) interface{} {
-	if val := reflect.ValueOf(value); val.Kind() == reflect.Ptr {
-		if val.IsNil() {
-			return nil
+	for {
+		val := reflect.ValueOf(value)
+		if val.Kind() == reflect.Ptr {
+			if val.IsNil() {
+				return nil
+			}
+			value = val.Elem().Interface()
 		}
-		value = val.Elem().Interface()
+		if val.Kind() != reflect.Ptr {
+			break
+		}
 	}
 	switch v := value.(type) {
 	case []Object:
