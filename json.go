@@ -243,7 +243,8 @@ func (j Object) Put(path string, value interface{}) Object {
 	return j
 }
 
-func convertValue(value interface{}) interface{} {
+//NormalizeValue ...
+func NormalizeValue(value interface{}) interface{} {
 	for {
 		val := reflect.ValueOf(value)
 
@@ -258,16 +259,17 @@ func convertValue(value interface{}) interface{} {
 			break
 		}
 	}
+
 	switch v := value.(type) {
 	case []Object:
 		arrayMap := []interface{}{}
 		for _, jo := range v {
-			arrayMap = append(arrayMap, convertValue(jo))
+			arrayMap = append(arrayMap, NormalizeValue(jo))
 		}
 		return arrayMap
 	case map[string]interface{}:
 		for key, val := range v {
-			v[key] = convertValue(val)
+			v[key] = NormalizeValue(val)
 		}
 		return v
 	case Object:
@@ -299,11 +301,21 @@ func convertValue(value interface{}) interface{} {
 	case uint64:
 		return uint(v)
 	}
+
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Map {
+		mapVal := make(map[string]interface{})
+		for _, key := range v.MapKeys() {
+			val := v.MapIndex(key)
+			mapVal[key.Interface().(string)] = NormalizeValue(val.Interface())
+		}
+		value = mapVal
+	}
 	return value
 }
 
 func (j Object) putE(path string, value interface{}) error {
-	value = convertValue(value)
+	value = NormalizeValue(value)
 
 	rootMap := j
 	currentMap := rootMap
@@ -320,23 +332,13 @@ func (j Object) putE(path string, value interface{}) error {
 				currentMap = curr
 			}
 		} else {
-			v := reflect.ValueOf(value)
-			if v.Kind() == reflect.Map {
-				mapVal := make(map[string]interface{})
-				for _, key := range v.MapKeys() {
-					val := v.MapIndex(key)
-					mapVal[key.Interface().(string)] = convertValue(val.Interface())
+			if m, ok := value.(map[string]interface{}); ok {
+				for key, val := range m {
+					m[key] = NormalizeValue(val)
 				}
-				currentMap[pathItem] = mapVal
+				currentMap[pathItem] = m
 			} else {
-				if m, ok := value.(map[string]interface{}); ok {
-					for key, val := range m {
-						m[key] = convertValue(val)
-					}
-					currentMap[pathItem] = m
-				} else {
-					currentMap[pathItem] = value
-				}
+				currentMap[pathItem] = value
 			}
 		}
 	}
