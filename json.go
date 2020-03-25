@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-/**
- * Created by tuxer on 9/6/17.
- */
-
 //Object ...
 type Object map[string]interface{}
 
@@ -24,6 +20,14 @@ func (j Object) ToFormattedBytes() []byte {
 		return nil
 	}
 	return data
+}
+
+//Has ...
+func (j Object) Has(key string) bool {
+	if _, ok := j[key]; ok {
+		return true
+	}
+	return false
 }
 
 //ToFormattedString ...
@@ -399,33 +403,37 @@ func Marshal(obj interface{}) ([]byte, error) {
 }
 
 //Parse ...
-func Parse(data []byte) Object {
+func Parse(data []byte) (Object, error) {
 	data = bytes.Trim(data, "\r\n\t ")
 	jo := Object{}
 	if e := json.Unmarshal(data, &jo); e != nil {
-		return nil
+		return nil, e
 	}
-	return jo
+	return jo, nil
 }
 
 //ParseObject ...
-func ParseObject(data interface{}) Object {
+func ParseObject(data interface{}) (Object, error) {
 	if marshalled, e := json.Marshal(data); e == nil {
 		return Parse(marshalled)
+	} else {
+		return nil, e
 	}
-	return nil
 }
 
 //ParseString ...
-func ParseString(data string) Object {
+func ParseString(data string) (Object, error) {
 	return Parse([]byte(data))
 }
 
 //ParseArray ...
-func ParseArray(data []byte) []Object {
+func ParseArray(data []byte) ([]Object, error) {
 	data = []byte(`{"data":` + string(data) + `}`)
-	jo := Parse(data)
-	return jo.GetArray(`data`)
+	jo, e := Parse(data)
+	if e != nil {
+		return nil, e
+	}
+	return jo.GetArray(`data`), nil
 }
 
 //ParseFile ...
@@ -434,5 +442,5 @@ func ParseFile(filename string) (Object, error) {
 	if e != nil {
 		return nil, e
 	}
-	return Parse(data), nil
+	return Parse(data)
 }
