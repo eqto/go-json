@@ -1,12 +1,10 @@
-# goson
-Java-like json parser for Go.
-
-Goson created to ease json parsing and building without hasle using struct.
+# go-json
+go-json created to ease json parsing and building without hasle using struct.
 
 # Install
 
 ```
-go get -u github.com/firabliz/goson
+go get -u github.com/eqto/go-json
 
 ```
 
@@ -18,67 +16,37 @@ Format JSON string and will returns the JSON Struct.
 
 **Parameters :**
 
-jsonString - it should be string format that contain JSON (check example string)
+jsonBytes - it should be []byte format that contain JSON
 
 **Returns :**
 
 JSON struct
 
-**Sample :**
-```json
+**How to use**
+```go
+/*
+data:
 {
-	"string_data": "string_value",
-	"numeric_data": 1
+  "title": "Learning go",
+  "num_chapters": 10,
+  "author": {
+    "first_name": "John",
+    "last_name": "Doe"
+  }
 }
-```
-**How to use**
-```go
-//parsing json
-jsObj   := goson.Parse(jsonVal)
+*/
 
-fmt.println(jsObj.GetString(`key`))         //print: string_value
+obj := json.Parse(data)
 
-fmt.println(jsObj.GetInt(`numeric_data`))   //print: 1
+fmt.println(obj.GetString(`title`))         //print: Learning go
 
-```
+fmt.println(obj.GetInt(`num_chapters`))   //print: 10
 
+fmt.println(obj.GetString(`author.first_name`))   //print: John
 
-### 2. ToString
-
-Returns JSON text for this JSON value.
-
-**Returns :**
-
-JSON text
-
-**How to use**
-
-```go
-//parsing json
-json  := goson.Parse(jsonVal)
-
-fmt.println(json.ToString())  //print: '{"string_data": "string_value","numeric_data": 1}'
 ```
 
-### 3. GetString
-
-Returns the string value to which the specified name is mapped.
-
-**Returns :**
-
-string value
-
-**How to use**
-
-```go
-//parsing json
-json   := goson.Parse(jsonVal)
-
-fmt.println(json.GetString(`key`))         //print: string_value
-```
-
-
-### 4. GetJsonArray
+### 2. GetJsonArray
 
 Returns the array value to which the specified name is mapped.
 
@@ -89,33 +57,25 @@ array value
 **How to use**
 
 ```go
-//parsing json
-json   := goson.Parse(jsonVal)
+/*
+data:
+{
+  "books": [
+    {
+      "title": "Learning go",
+      "num_chapters": 10
+    },
+    {
+      "title": "Basic of go",
+      "num_chapters": 5
+    }
+  ]
+}
+*/
 
-var arrJson []JsonObject
-arrJson = json.GetJsonArray(`key`)
+obj := goson.Parse(data)
 
-```
-
-### 5. GetJsonObject
-
-Returns the object value to which the specified name is mapped.
-
-**Returns :**
-
-object value
-
-**How to use**
-
-```go
-//parsing json
-json   := goson.Parse(jsonVal)
-
-var obj JsonObject
-obj = json.GetJsonObject(`key`)
-
+arr := obj.GetArray(`books`)
 
 ```
-
-
 
