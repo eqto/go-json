@@ -247,7 +247,7 @@ func (j Object) Put(path string, value interface{}) Object {
 	return j
 }
 
-//NormalizeValue ...
+//NormalizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
 func NormalizeValue(value interface{}) interface{} {
 	for {
 		val := reflect.ValueOf(value)
@@ -391,6 +391,19 @@ func (j Object) Remove(path string) {
 	} else {
 		delete(j, path)
 	}
+}
+
+//Clone ...
+func (j Object) Clone() Object {
+	cp := Object{}
+	for k, v := range j {
+		if v, ok := v.(Object); ok {
+			cp[k] = v.Clone()
+			continue
+		}
+		cp[k] = v
+	}
+	return cp
 }
 
 //Marshal ...
