@@ -1,10 +1,8 @@
 package json
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -24,10 +22,8 @@ func (j Object) ToFormattedBytes() []byte {
 
 //Has ...
 func (j Object) Has(key string) bool {
-	if _, ok := j[key]; ok {
-		return true
-	}
-	return false
+	split := strings.Split(key, `.`)
+	return getFromMap(j, split...) != nil
 }
 
 //ToFormattedString ...
@@ -54,11 +50,6 @@ func (j Object) ToString() string {
 		str = string(data)
 	}
 	return str
-}
-
-//GetInterface ...
-func (j Object) GetInterface(path string) interface{} {
-	return j.Get(path)
 }
 
 //GetArray ...
@@ -352,29 +343,8 @@ func (j Object) putE(path string, value interface{}) error {
 
 //Get ...
 func (j Object) Get(path string) interface{} {
-	splittedPath := strings.Split(path, `.`)
-
-	var jsonMap Object
-	jsonMap = j
-	var val interface{}
-	for _, pathItem := range splittedPath {
-		if jsonMap == nil {
-			return nil
-		}
-		val = jsonMap[pathItem]
-
-		switch val := val.(type) {
-		case Object:
-			jsonMap = val
-		case map[string]interface{}:
-			jsonMap = Object(val)
-		case []interface{}:
-			return val
-		default:
-			jsonMap = nil
-		}
-	}
-	return val
+	split := strings.Split(path, `.`)
+	return getFromMap(j, split...)
 }
 
 //Remove ...
@@ -404,56 +374,4 @@ func (j Object) Clone() Object {
 		cp[k] = v
 	}
 	return cp
-}
-
-//Marshal ...
-func Marshal(obj interface{}) ([]byte, error) {
-	if data, e := json.Marshal(obj); e == nil {
-		return data, nil
-	} else {
-		return nil, e
-	}
-}
-
-//Parse ...
-func Parse(data []byte) (Object, error) {
-	data = bytes.Trim(data, "\r\n\t ")
-	jo := Object{}
-	if e := json.Unmarshal(data, &jo); e != nil {
-		return nil, e
-	}
-	return jo, nil
-}
-
-//ParseObject ...
-func ParseObject(data interface{}) (Object, error) {
-	if marshalled, e := json.Marshal(data); e == nil {
-		return Parse(marshalled)
-	} else {
-		return nil, e
-	}
-}
-
-//ParseString ...
-func ParseString(data string) (Object, error) {
-	return Parse([]byte(data))
-}
-
-//ParseArray ...
-func ParseArray(data []byte) ([]Object, error) {
-	data = []byte(`{"data":` + string(data) + `}`)
-	jo, e := Parse(data)
-	if e != nil {
-		return nil, e
-	}
-	return jo.GetArray(`data`), nil
-}
-
-//ParseFile ...
-func ParseFile(filename string) (Object, error) {
-	data, e := ioutil.ReadFile(filename)
-	if e != nil {
-		return nil, e
-	}
-	return Parse(data)
 }
