@@ -52,7 +52,8 @@ func (j Object) ToString() string {
 	return str
 }
 
-func (j Object) getArray(path string) []interface{} {
+//Array ...
+func (j Object) Array(path string) []interface{} {
 	obj := j.Get(path)
 	if values, ok := obj.([]interface{}); ok {
 		return values
@@ -62,7 +63,7 @@ func (j Object) getArray(path string) []interface{} {
 
 //GetArray ...
 func (j Object) GetArray(path string) []Object {
-	if objs := j.getArray(path); objs != nil {
+	if objs := j.Array(path); objs != nil {
 		var arr []Object
 		for _, obj := range objs {
 			switch obj := obj.(type) {
@@ -81,7 +82,7 @@ func (j Object) GetArray(path string) []Object {
 
 //GetIntArray ...
 func (j Object) GetIntArray(path string) []int {
-	if ints := j.getArray(path); ints != nil {
+	if ints := j.Array(path); ints != nil {
 		var arr []int
 		for _, i := range ints {
 			if i, ok := i.(int); ok {
@@ -97,7 +98,7 @@ func (j Object) GetIntArray(path string) []int {
 
 //GetStringArray ...
 func (j Object) GetStringArray(path string) []string {
-	if strs := j.getArray(path); strs != nil {
+	if strs := j.Array(path); strs != nil {
 		var arr []string
 		for _, s := range strs {
 			if s, ok := s.(string); ok {
