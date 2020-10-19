@@ -52,17 +52,26 @@ func (j Object) ToString() string {
 	return str
 }
 
-//GetArray ...
-func (j Object) GetArray(path string) []Object {
+func (j Object) getArray(path string) []interface{} {
 	obj := j.Get(path)
 	if values, ok := obj.([]interface{}); ok {
+		return values
+	}
+	return nil
+}
+
+//GetArray ...
+func (j Object) GetArray(path string) []Object {
+	if objs := j.getArray(path); objs != nil {
 		var arr []Object
-		for _, value := range values {
-			switch val := value.(type) {
+		for _, obj := range objs {
+			switch obj := obj.(type) {
 			case Object:
-				arr = append(arr, val)
+				arr = append(arr, obj)
 			case map[string]interface{}:
-				arr = append(arr, val)
+				arr = append(arr, obj)
+			default:
+				return nil
 			}
 		}
 		return arr
@@ -72,11 +81,14 @@ func (j Object) GetArray(path string) []Object {
 
 //GetIntArray ...
 func (j Object) GetIntArray(path string) []int {
-	obj := j.Get(path)
-	if values, ok := obj.([]interface{}); ok {
+	if ints := j.getArray(path); ints != nil {
 		var arr []int
-		for _, value := range values {
-			arr = append(arr, value.(int))
+		for _, i := range ints {
+			if i, ok := i.(int); ok {
+				arr = append(arr, i)
+			} else {
+				return nil
+			}
 		}
 		return arr
 	}
@@ -85,11 +97,14 @@ func (j Object) GetIntArray(path string) []int {
 
 //GetStringArray ...
 func (j Object) GetStringArray(path string) []string {
-	obj := j.Get(path)
-	if values, ok := obj.([]interface{}); ok {
+	if strs := j.getArray(path); strs != nil {
 		var arr []string
-		for _, value := range values {
-			arr = append(arr, value.(string))
+		for _, s := range strs {
+			if s, ok := s.(string); ok {
+				arr = append(arr, s)
+			} else {
+				return nil
+			}
 		}
 		return arr
 	}
