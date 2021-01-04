@@ -118,6 +118,8 @@ func (j Object) GetJSONObject(path string) Object {
 
 	if v, ok := obj.(map[string]interface{}); ok {
 		return Object(v)
+	} else if obj, ok := obj.(Object); ok {
+		return obj
 	}
 	return nil
 }
