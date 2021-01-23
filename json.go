@@ -261,6 +261,9 @@ func sanitizeValue(value interface{}) interface{} {
 	val := reflect.ValueOf(value)
 	switch val.Kind() {
 	case reflect.Ptr:
+		if val.IsNil() {
+			return nil
+		}
 		return sanitizeValue(val.Elem().Interface())
 	case reflect.Uint:
 		fallthrough
