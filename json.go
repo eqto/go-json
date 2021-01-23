@@ -256,79 +256,61 @@ func (j Object) Put(path string, value interface{}) Object {
 	return j
 }
 
-//NormalizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
-func NormalizeValue(value interface{}) interface{} {
-	for {
-		val := reflect.ValueOf(value)
-
-		if val.Kind() == reflect.Ptr {
-			if val.IsNil() {
-				return nil
-			}
-			value = val.Elem().Interface()
-			val = reflect.ValueOf(value)
+//sanitizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
+func sanitizeValue(value interface{}) interface{} {
+	val := reflect.ValueOf(value)
+	switch val.Kind() {
+	case reflect.Ptr:
+		return sanitizeValue(val.Elem().Interface())
+	case reflect.Uint:
+		fallthrough
+	case reflect.Uint8:
+		fallthrough
+	case reflect.Uint16:
+		fallthrough
+	case reflect.Uint32:
+		fallthrough
+	case reflect.Uint64:
+		return uint(val.Uint())
+	case reflect.Int:
+		fallthrough
+	case reflect.Int8:
+		fallthrough
+	case reflect.Int16:
+		fallthrough
+	case reflect.Int32:
+		fallthrough
+	case reflect.Int64:
+		return int(val.Int())
+	case reflect.Map:
+		if val.Type().Key().Kind() != reflect.String {
+			println(`unsupported map with key type not string`)
+			return nil
 		}
-		if val.Kind() != reflect.Ptr {
-			break
+		m := make(map[string]interface{})
+		iter := val.MapRange()
+		for iter.Next() {
+			key := iter.Key()
+			val := iter.Value()
+			m[key.Interface().(string)] = sanitizeValue(val.Interface())
 		}
-	}
-
-	switch v := value.(type) {
-	case []Object:
-		arrayMap := []interface{}{}
-		for _, jo := range v {
-			arrayMap = append(arrayMap, NormalizeValue(jo))
+		return m
+	case reflect.Slice:
+		if reflect.TypeOf(value).Elem().Kind() == reflect.Uint8 {
+			return string(value.([]uint8))
 		}
-		return arrayMap
-	case map[string]interface{}:
-		for key, val := range v {
-			v[key] = NormalizeValue(val)
+		length := val.Len()
+		slice := make([]interface{}, length)
+		for i := 0; i < length; i++ {
+			slice[i] = sanitizeValue(val.Index(i).Interface())
 		}
-		return v
-	case Object:
-		return v
-	case []byte:
-		return string(v)
-	case float32:
-		return float64(v)
-	case float64:
-		return v
-	case int:
-		return v
-	case int8:
-		return int(v)
-	case int16:
-		return int(v)
-	case int32:
-		return int(v)
-	case int64:
-		return int(v)
-	case uint:
-		return v
-	case uint8:
-		return uint(v)
-	case uint16:
-		return uint(v)
-	case uint32:
-		return uint(v)
-	case uint64:
-		return uint(v)
-	}
-
-	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.Map {
-		mapVal := make(map[string]interface{})
-		for _, key := range v.MapKeys() {
-			val := v.MapIndex(key)
-			mapVal[key.Interface().(string)] = NormalizeValue(val.Interface())
-		}
-		value = mapVal
+		return slice
 	}
 	return value
 }
 
 func (j Object) putE(path string, value interface{}) error {
-	value = NormalizeValue(value)
+	value = sanitizeValue(value)
 
 	rootMap := j
 	currentMap := rootMap
@@ -347,7 +329,7 @@ func (j Object) putE(path string, value interface{}) error {
 		} else {
 			if m, ok := value.(map[string]interface{}); ok {
 				for key, val := range m {
-					m[key] = NormalizeValue(val)
+					m[key] = sanitizeValue(val)
 				}
 				currentMap[pathItem] = m
 			} else {
