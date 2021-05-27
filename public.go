@@ -27,6 +27,7 @@ func Parse(data []byte) (Object, error) {
 
 //ParseObject ...
 func ParseObject(data interface{}) (Object, error) {
+	data = sanitizeValue(data)
 	if marshalled, e := json.Marshal(data); e == nil {
 		return Parse(marshalled)
 	} else {
