@@ -256,6 +256,17 @@ func (j Object) Put(path string, value interface{}) Object {
 	return j
 }
 
+func (j Object) CopyTo(js *Object) {
+	for key, val := range j {
+		switch val := val.(type) {
+		case Object:
+			js.Put(key, val.Clone())
+		default:
+			js.Put(key, val)
+		}
+	}
+}
+
 //sanitizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
 func sanitizeValue(value interface{}) interface{} {
 	val := reflect.ValueOf(value)
