@@ -351,12 +351,14 @@ func (j Object) putE(path string, value interface{}) error {
 			}
 		}
 	}
-	j = rootMap
 	return nil
 }
 
 //Get ...
 func (j Object) Get(path string) interface{} {
+	if o := getFromMap(j, []string{path}...); o != nil {
+		return o
+	}
 	split := strings.Split(path, `.`)
 	return getFromMap(j, split...)
 }
