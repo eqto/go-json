@@ -1,6 +1,7 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"reflect"
@@ -8,43 +9,33 @@ import (
 	"strings"
 )
 
-//Object ...
 type Object map[string]interface{}
 
-//ToFormattedBytes ...
-func (j Object) ToFormattedBytes() []byte {
-	data, e := json.MarshalIndent(j, ``, `  `)
-	if e != nil {
-		return nil
-	}
-	return data
+func (j Object) Beautify() Beautifier {
+	return &beautifier{js: j}
 }
 
-//Has ...
 func (j Object) Has(key string) bool {
 	split := strings.Split(key, `.`)
 	return getFromMap(j, split...) != nil
 }
 
-//ToFormattedString ...
-func (j Object) ToFormattedString() string {
-	return string(j.ToFormattedBytes())
-}
-
-//ToBytes ...
-func (j Object) ToBytes() []byte {
+func (j Object) Bytes() []byte {
 	if len(j) == 0 {
 		return []byte(`{}`)
 	}
-	if data, e := json.Marshal(j); e == nil {
-		return data
+	data := bytes.NewBufferString(``)
+	enc := json.NewEncoder(data)
+	enc.SetEscapeHTML(false)
+	if e := enc.Encode(j); e != nil {
+		return nil
 	}
-	return nil
+	println(data.Len())
+	return data.Bytes()
 }
 
-//ToString ...
-func (j Object) ToString() string {
-	data := j.ToBytes()
+func (j Object) String() string {
+	data := j.Bytes()
 	str := `{}`
 	if data != nil {
 		str = string(data)
@@ -52,7 +43,6 @@ func (j Object) ToString() string {
 	return str
 }
 
-//Array ...
 func (j Object) Array(path string) []interface{} {
 	obj := j.Get(path)
 	if values, ok := obj.([]interface{}); ok {
@@ -61,7 +51,6 @@ func (j Object) Array(path string) []interface{} {
 	return nil
 }
 
-//GetArray ...
 func (j Object) GetArray(path string) []Object {
 	if objs := j.Array(path); objs != nil {
 		var arr []Object
@@ -80,7 +69,6 @@ func (j Object) GetArray(path string) []Object {
 	return nil
 }
 
-//GetIntArray ...
 func (j Object) GetIntArray(path string) []int {
 	if ints := j.Array(path); ints != nil {
 		var arr []int
@@ -96,7 +84,6 @@ func (j Object) GetIntArray(path string) []int {
 	return nil
 }
 
-//GetStringArray ...
 func (j Object) GetStringArray(path string) []string {
 	if strs := j.Array(path); strs != nil {
 		var arr []string
@@ -112,7 +99,6 @@ func (j Object) GetStringArray(path string) []string {
 	return nil
 }
 
-//GetJSONObject ...
 func (j Object) GetJSONObject(path string) Object {
 	obj := j.Get(path)
 
@@ -124,7 +110,6 @@ func (j Object) GetJSONObject(path string) Object {
 	return nil
 }
 
-//GetFloatNull ...
 func (j Object) GetFloatNull(path string) *float64 {
 	obj := j.Get(path)
 
@@ -148,7 +133,6 @@ func (j Object) GetFloatNull(path string) *float64 {
 	}
 }
 
-//GetFloatOr ...
 func (j Object) GetFloatOr(path string, defValue float64) float64 {
 	if val := j.GetFloatNull(path); val != nil {
 		return *val
@@ -156,12 +140,10 @@ func (j Object) GetFloatOr(path string, defValue float64) float64 {
 	return defValue
 }
 
-//GetFloat ...
 func (j Object) GetFloat(path string) float64 {
 	return j.GetFloatOr(path, 0)
 }
 
-//GetIntNull ...
 func (j Object) GetIntNull(path string) *int {
 	switch val := j.Get(path).(type) {
 	case int:
@@ -182,7 +164,6 @@ func (j Object) GetIntNull(path string) *int {
 	return nil
 }
 
-//GetIntOr ...
 func (j Object) GetIntOr(path string, defValue int) int {
 	if val := j.GetIntNull(path); val != nil {
 		return *val
@@ -190,12 +171,10 @@ func (j Object) GetIntOr(path string, defValue int) int {
 	return defValue
 }
 
-//GetInt ...
 func (j Object) GetInt(path string) int {
 	return j.GetIntOr(path, 0)
 }
 
-//GetBooleanNull ...
 func (j Object) GetBooleanNull(path string) *bool {
 	obj := j.Get(path)
 	if b, ok := obj.(bool); ok {
@@ -204,7 +183,6 @@ func (j Object) GetBooleanNull(path string) *bool {
 	return nil
 }
 
-//GetBooleanOr ...
 func (j Object) GetBooleanOr(path string, defValue bool) bool {
 	if val := j.GetBooleanNull(path); val != nil {
 		return *val
@@ -212,12 +190,10 @@ func (j Object) GetBooleanOr(path string, defValue bool) bool {
 	return defValue
 }
 
-//GetBoolean ...
 func (j Object) GetBoolean(path string) bool {
 	return j.GetBooleanOr(path, false)
 }
 
-//GetStringNull ...
 func (j Object) GetStringNull(path string) *string {
 	obj := j.Get(path)
 
@@ -237,7 +213,6 @@ func (j Object) GetStringNull(path string) *string {
 	return nil
 }
 
-//GetStringOr ...
 func (j Object) GetStringOr(path string, defValue string) string {
 	if val := j.GetStringNull(path); val != nil {
 		return *val
@@ -245,12 +220,10 @@ func (j Object) GetStringOr(path string, defValue string) string {
 	return defValue
 }
 
-//GetString ...
 func (j Object) GetString(path string) string {
 	return j.GetStringOr(path, ``)
 }
 
-//Put ...
 func (j Object) Put(path string, value interface{}) Object {
 	j.putE(path, value)
 	return j
@@ -267,7 +240,7 @@ func (j Object) CopyTo(js *Object) {
 	}
 }
 
-//sanitizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
+// sanitizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
 func sanitizeValue(value interface{}) interface{} {
 	val := reflect.ValueOf(value)
 	switch val.Kind() {
@@ -354,7 +327,6 @@ func (j Object) putE(path string, value interface{}) error {
 	return nil
 }
 
-//Get ...
 func (j Object) Get(path string) interface{} {
 	if o := getFromMap(j, []string{path}...); o != nil {
 		return o
@@ -363,7 +335,6 @@ func (j Object) Get(path string) interface{} {
 	return getFromMap(j, split...)
 }
 
-//Remove ...
 func (j Object) Remove(path string) {
 	index := strings.LastIndex(path, `.`)
 	if index >= 0 {
@@ -379,7 +350,6 @@ func (j Object) Remove(path string) {
 	}
 }
 
-//Clone ...
 func (j Object) Clone() Object {
 	cp := Object{}
 	for k, v := range j {

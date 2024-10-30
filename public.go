@@ -1,23 +1,18 @@
 package json
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
-//Marshal ...
-func Marshal(obj interface{}) ([]byte, error) {
-	if data, e := json.Marshal(obj); e == nil {
-		return data, nil
-	} else {
-		return nil, e
-	}
+func Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+func Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
 }
 
-//Parse ...
 func Parse(data []byte) (Object, error) {
-	data = bytes.Trim(data, "\r\n\t ")
 	jo := Object{}
 	if e := json.Unmarshal(data, &jo); e != nil {
 		return nil, e
@@ -25,7 +20,6 @@ func Parse(data []byte) (Object, error) {
 	return jo, nil
 }
 
-//ParseObject ...
 func ParseObject(data interface{}) (Object, error) {
 	data = sanitizeValue(data)
 	if marshalled, e := json.Marshal(data); e == nil {
@@ -35,12 +29,10 @@ func ParseObject(data interface{}) (Object, error) {
 	}
 }
 
-//ParseString ...
 func ParseString(data string) (Object, error) {
 	return Parse([]byte(data))
 }
 
-//ParseArray ...
 func ParseArray(data []byte) ([]Object, error) {
 	data = []byte(`{"data":` + string(data) + `}`)
 	jo, e := Parse(data)
@@ -50,9 +42,8 @@ func ParseArray(data []byte) ([]Object, error) {
 	return jo.GetArray(`data`), nil
 }
 
-//ParseFile ...
 func ParseFile(filename string) (Object, error) {
-	data, e := ioutil.ReadFile(filename)
+	data, e := os.ReadFile(filename)
 	if e != nil {
 		return nil, e
 	}
