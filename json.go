@@ -30,7 +30,6 @@ func (j Object) Bytes() []byte {
 	if e := enc.Encode(j); e != nil {
 		return nil
 	}
-	println(data.Len())
 	return data.Bytes()
 }
 
