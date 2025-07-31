@@ -25,10 +25,14 @@ func (j Object) Bytes() []byte {
 		return []byte(`{}`)
 	}
 	data := bytes.NewBufferString(``)
+	json.Marshal(j)
 	enc := json.NewEncoder(data)
 	enc.SetEscapeHTML(false)
 	if e := enc.Encode(j); e != nil {
 		return nil
+	}
+	if data.Len() > 0 {
+		return data.Bytes()[0 : data.Len()-1]
 	}
 	return data.Bytes()
 }
