@@ -76,9 +76,12 @@ func (j Object) GetIntArray(path string) []int {
 	if ints := j.Array(path); ints != nil {
 		var arr []int
 		for _, i := range ints {
-			if i, ok := i.(int); ok {
+			switch i := i.(type) {
+			case int:
 				arr = append(arr, i)
-			} else {
+			case float64:
+				arr = append(arr, int(i))
+			default:
 				return nil
 			}
 		}
