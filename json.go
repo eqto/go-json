@@ -4,366 +4,313 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"reflect"
 	"strconv"
-	"strings"
 )
 
+// Object represents a JSON object as a map with string keys and any type values.
+// It provides convenient methods for accessing and manipulating JSON data.
 type Object map[string]interface{}
 
-func (j Object) Beautify() Beautifier {
-	return &beautifier{js: j}
+// Set adds or updates a key-value pair in the JSON object.
+// Parameters:
+//   - key: the string key to set in the object
+//   - val: the value to associate with the key (can be any type)
+func (o Object) Set(key string, val interface{}) {
+	o[key] = val
 }
 
-func (j Object) Has(key string) bool {
-	split := strings.Split(key, `.`)
-	return getFromMap(j, split...) != nil
-}
-
-func (j Object) Bytes() []byte {
-	if len(j) == 0 {
-		return []byte(`{}`)
-	}
-	data := bytes.NewBufferString(``)
-	json.Marshal(j)
-	enc := json.NewEncoder(data)
-	enc.SetEscapeHTML(false)
-	if e := enc.Encode(j); e != nil {
-		return nil
-	}
-	if data.Len() > 0 {
-		return data.Bytes()[0 : data.Len()-1]
-	}
-	return data.Bytes()
-}
-
-func (j Object) String() string {
-	data := j.Bytes()
-	str := `{}`
-	if data != nil {
-		str = string(data)
-	}
-	return str
-}
-
-func (j Object) Array(path string) []interface{} {
-	obj := j.Get(path)
-	if values, ok := obj.([]interface{}); ok {
-		return values
+// Get retrieves a value from the JSON object by key.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - the value associated with the key, or nil if the key doesn't exist
+func (o Object) Get(key string) interface{} {
+	if v, ok := o[key]; ok {
+		return v
 	}
 	return nil
 }
 
-func (j Object) GetArray(path string) []Object {
-	if objs := j.Array(path); objs != nil {
-		var arr []Object
-		for _, obj := range objs {
-			switch obj := obj.(type) {
-			case Object:
-				arr = append(arr, obj)
-			case map[string]interface{}:
-				arr = append(arr, obj)
-			default:
-				return nil
+// GetObject retrieves a nested JSON object from the current object by key.
+// It handles both Object type and map[string]any type conversions.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - the nested Object if found and convertible, or an empty Object if not found or not convertible
+func (o Object) GetObject(key string) Object {
+	if v, ok := o[key]; ok {
+		switch v := v.(type) {
+		case Object:
+			return v
+		case map[string]interface{}:
+			return Object(v)
+		}
+	}
+	return Object{}
+}
+
+// Has checks if a key exists in the JSON object.
+// Parameters:
+//   - key: the string key to check for existence
+//
+// Returns:
+//   - true if the key exists in the object, false otherwise
+func (o Object) Has(key string) bool {
+	_, ok := o[key]
+	return ok
+}
+
+// GetInt retrieves an integer value from the JSON object by key.
+// It attempts to convert various types (float64, string, bool) to int.
+// For strings, it uses strconv.Atoi for conversion.
+// For booleans, true returns 1, false returns 0.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - the integer value if convertible, or 0 if not found or not convertible
+func (o Object) GetInt(key string) int {
+	if v, ok := o[key]; ok {
+		switch v := v.(type) {
+		case int:
+			return v
+		case float64:
+			return int(v)
+		case string:
+			if i, e := strconv.Atoi(v); e == nil {
+				return i
+			}
+		case bool:
+			if v {
+				return 1
+			}
+			return 0
+		}
+	}
+	return 0
+}
+
+// GetFloat retrieves a float64 value from the JSON object by key.
+// It attempts to convert various types (float64, string) to float64.
+// For strings, it uses strconv.ParseFloat for conversion.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - the float64 value if convertible, or 0 if not found or not convertible
+func (o Object) GetFloat(key string) float64 {
+	if v, ok := o[key]; ok {
+		switch v := v.(type) {
+		case float64:
+			return v
+		case string:
+			if f, e := strconv.ParseFloat(v, 64); e == nil {
+				return f
 			}
 		}
-		return arr
 	}
-	return nil
+	return 0
 }
 
-func (j Object) GetIntArray(path string) []int {
-	if ints := j.Array(path); ints != nil {
-		var arr []int
-		for _, i := range ints {
-			switch i := i.(type) {
-			case int:
-				arr = append(arr, i)
-			case float64:
-				arr = append(arr, int(i))
-			default:
-				return nil
+// GetString retrieves a string value from the JSON object by key.
+// It converts various types (string, float64, bool) to string representation.
+// For float64, it formats without decimal places.
+// For bool, it returns "true" or "false".
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - the string value if convertible, or empty string if not found or not convertible
+func (o Object) GetString(key string) string {
+	if v, ok := o[key]; ok {
+		switch v := v.(type) {
+		case string:
+			return v
+		case float64:
+			return strconv.FormatFloat(v, 'f', 0, 64)
+		case bool:
+			if v {
+				return `true`
 			}
+			return `false`
 		}
-		return arr
 	}
-	return nil
+	return ``
 }
 
-func (j Object) GetStringArray(path string) []string {
-	if strs := j.Array(path); strs != nil {
-		var arr []string
-		for _, s := range strs {
-			if s, ok := s.(string); ok {
-				arr = append(arr, s)
-			} else {
-				return nil
+// GetArray retrieves an array of any type from the JSON object by key.
+// It handles JSON arrays and returns them as []any.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - a slice of any if the value is an array, or empty slice if not found or not convertible
+func (o Object) GetArray(key string) []interface{} {
+	if v, ok := o[key]; ok {
+		if arr, ok := v.([]interface{}); ok {
+			return arr
+		}
+	}
+	return []interface{}{}
+}
+
+// GetObjectArray retrieves an array of JSON objects from the JSON object by key.
+// It handles JSON arrays where each element should be a JSON object (map[string]any).
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - a slice of Object if the value is an array of objects, or empty slice if not found or not convertible
+func (o Object) GetObjectArray(key string) []Object {
+	if v, ok := o[key]; ok {
+		if arr, ok := v.([]interface{}); ok {
+			result := make([]Object, 0, len(arr))
+			for _, item := range arr {
+				if obj, ok := item.(map[string]interface{}); ok {
+					result = append(result, Object(obj))
+				}
 			}
+			return result
 		}
-		return arr
 	}
-	return nil
+	return []Object{}
 }
 
-func (j Object) GetJSONObject(path string) Object {
-	obj := j.Get(path)
+// GetIntArray retrieves an array of integers from the JSON object by key.
+// It handles JSON arrays where numbers are typically parsed as float64.
+// Parameters:
+//   - key: the string key to look up in the object
+//
+// Returns:
+//   - a slice of integers if the value is a convertible array, or empty slice if not found or not convertible
+func (o Object) GetIntArray(key string) []int {
+	if v, ok := o[key]; ok {
+		if arr, ok := v.([]interface{}); ok {
+			result := make([]int, 0, len(arr))
+			for _, item := range arr {
+				switch val := item.(type) {
+				case float64:
+					result = append(result, int(val))
+				case int:
+					result = append(result, val)
+				case int64:
+					result = append(result, int(val))
+				}
+			}
+			return result
+		}
+	}
+	return []int{}
+}
 
-	if v, ok := obj.(map[string]interface{}); ok {
-		return Object(v)
-	} else if obj, ok := obj.(Object); ok {
+// String converts the JSON object to its string representation.
+// It uses json.Marshal for serialization and returns a formatted JSON string.
+// Returns:
+//   - the JSON string representation of the object, or "{}" if marshaling fails
+func (o Object) String() string {
+	return string(o.Bytes())
+}
+
+// Bytes converts the JSON object to its byte slice representation.
+// It uses json.Marshal for serialization and returns the raw bytes.
+// Returns:
+//   - the JSON byte slice representation of the object, or empty byte slice if marshaling fails
+func (o Object) Bytes() []byte {
+	if b, e := json.Marshal(o); e == nil {
+		return b
+	}
+	return []byte(`{}`)
+}
+
+// ParseResult represents the result of parsing JSON data.
+// It contains information about whether the parsed data is an array or object,
+// the parsed result, and any error that occurred during parsing.
+type ParseResult struct {
+	isArray bool        // indicates if the parsed data is a JSON array
+	result  interface{} // the parsed JSON data (either []Object or Object)
+	err     error       // any error that occurred during parsing
+}
+
+// IsArray checks if the parsed result contains a JSON array.
+// Returns:
+//   - true if the parsed data is an array, false otherwise
+func (p *ParseResult) IsArray() bool {
+	return p.isArray
+}
+
+// IsValid checks if the parsing operation was successful (no errors occurred).
+// Returns:
+//   - true if parsing was successful, false if an error occurred
+func (p *ParseResult) IsValid() bool {
+	return p.err == nil
+}
+
+// Error returns the error that occurred during parsing, if any.
+// Returns:
+//   - the parsing error, or nil if parsing was successful
+func (p *ParseResult) Error() error {
+	return p.err
+}
+
+// Array retrieves the parsed result as a slice of JSON objects.
+// This should only be called after checking IsArray() returns true.
+// Returns:
+//   - the array of Objects if the result is an array, or empty slice otherwise
+func (p *ParseResult) Array() []Object {
+	if arr, ok := p.result.([]Object); ok {
+		return arr
+	}
+	return []Object{}
+}
+
+// Object retrieves the parsed result as a JSON object.
+// This should only be called after checking IsArray() returns false.
+// Returns:
+//   - the Object if the result is an object, or empty Object otherwise
+func (p *ParseResult) Object() Object {
+	if obj, ok := p.result.(Object); ok {
 		return obj
 	}
-	return nil
+	return Object{}
 }
 
-func (j Object) GetFloatNull(path string) *float64 {
-	obj := j.Get(path)
-
-	switch val := obj.(type) {
-	case float64:
-		return &val
-	case int:
-		float := float64(val)
-		return &float
-	case uint:
-		float := float64(val)
-		return &float
-	case string:
-		float, e := strconv.ParseFloat(val, 64)
-		if e != nil {
-			return nil
-		}
-		return &float
-	default:
-		return nil
-	}
-}
-
-func (j Object) GetFloatOr(path string, defValue float64) float64 {
-	if val := j.GetFloatNull(path); val != nil {
-		return *val
-	}
-	return defValue
-}
-
-func (j Object) GetFloat(path string) float64 {
-	return j.GetFloatOr(path, 0)
-}
-
-func (j Object) GetIntNull(path string) *int {
-	switch val := j.Get(path).(type) {
-	case int:
-		return &val
-	case uint:
-		intVal := int(val)
-		return &intVal
-	case float64:
-		intVal := int(val)
-		return &intVal
-	case string:
-		intVal, e := strconv.Atoi(val)
-		if e != nil {
-			return nil
-		}
-		return &intVal
-	}
-	return nil
-}
-
-func (j Object) GetIntOr(path string, defValue int) int {
-	if val := j.GetIntNull(path); val != nil {
-		return *val
-	}
-	return defValue
-}
-
-func (j Object) GetInt(path string) int {
-	return j.GetIntOr(path, 0)
-}
-
-func (j Object) GetBooleanNull(path string) *bool {
-	obj := j.Get(path)
-	if b, ok := obj.(bool); ok {
-		return &b
-	}
-	return nil
-}
-
-func (j Object) GetBooleanOr(path string, defValue bool) bool {
-	if val := j.GetBooleanNull(path); val != nil {
-		return *val
-	}
-	return defValue
-}
-
-func (j Object) GetBoolean(path string) bool {
-	return j.GetBooleanOr(path, false)
-}
-
-func (j Object) GetStringNull(path string) *string {
-	obj := j.Get(path)
-
-	switch val := obj.(type) {
-	case string:
-		return &val
-	case float64:
-		str := strconv.FormatFloat(val, 'f', -1, 64)
-		return &str
-	case int:
-		str := strconv.Itoa(val)
-		return &str
-	case uint:
-		str := strconv.FormatUint(uint64(val), 10)
-		return &str
-	}
-	return nil
-}
-
-func (j Object) GetStringOr(path string, defValue string) string {
-	if val := j.GetStringNull(path); val != nil {
-		return *val
-	}
-	return defValue
-}
-
-func (j Object) GetString(path string) string {
-	return j.GetStringOr(path, ``)
-}
-
-func (j Object) Put(path string, value interface{}) Object {
-	j.putE(path, value)
-	return j
-}
-
-func (j Object) CopyTo(js *Object) {
-	for key, val := range j {
-		switch val := val.(type) {
-		case Object:
-			js.Put(key, val.Clone())
+// Parse attempts to parse JSON data from a byte slice.
+// It automatically detects whether the JSON is an array or object based on the first character.
+// The function trims whitespace and validates the JSON structure.
+// Parameters:
+//   - data: the byte slice containing JSON data to parse
+//
+// Returns:
+//   - a ParseResult containing the parsed data, type information, and any parsing errors
+func Parse(data []byte) *ParseResult {
+	p := &ParseResult{}
+	data = bytes.TrimSpace(data)
+	if len(data) > 0 {
+		switch data[0] {
+		case '[': //array
+			p.isArray = true
+			obj := []Object{}
+			if err := json.Unmarshal(data, &obj); err != nil {
+				p.err = err
+			}
+			p.result = obj
+		case '{': //object
+			obj := make(Object)
+			if err := json.Unmarshal(data, &obj); err != nil {
+				p.err = err
+			}
+			p.result = obj
 		default:
-			js.Put(key, val)
-		}
-	}
-}
-
-// sanitizeValue if value is pointer, then get value from pointer, and convert value to recognizable value
-func sanitizeValue(value interface{}) interface{} {
-	val := reflect.ValueOf(value)
-	switch val.Kind() {
-	case reflect.Ptr:
-		if val.IsNil() {
-			return nil
-		}
-		return sanitizeValue(val.Elem().Interface())
-	case reflect.Uint:
-		fallthrough
-	case reflect.Uint8:
-		fallthrough
-	case reflect.Uint16:
-		fallthrough
-	case reflect.Uint32:
-		fallthrough
-	case reflect.Uint64:
-		return uint(val.Uint())
-	case reflect.Int:
-		fallthrough
-	case reflect.Int8:
-		fallthrough
-	case reflect.Int16:
-		fallthrough
-	case reflect.Int32:
-		fallthrough
-	case reflect.Int64:
-		return int(val.Int())
-	case reflect.Map:
-		if val.Type().Key().Kind() != reflect.String {
-			println(`unsupported map with key type not string`)
-			return nil
-		}
-		m := make(map[string]interface{})
-		iter := val.MapRange()
-		for iter.Next() {
-			key := iter.Key()
-			val := iter.Value()
-			m[key.Interface().(string)] = sanitizeValue(val.Interface())
-		}
-		return m
-	case reflect.Slice:
-		if reflect.TypeOf(value).Elem().Kind() == reflect.Uint8 {
-			return string(value.([]uint8))
-		}
-		length := val.Len()
-		slice := make([]interface{}, length)
-		for i := 0; i < length; i++ {
-			slice[i] = sanitizeValue(val.Index(i).Interface())
-		}
-		return slice
-	}
-	return value
-}
-
-func (j Object) putE(path string, value interface{}) error {
-	value = sanitizeValue(value)
-
-	rootMap := j
-	currentMap := rootMap
-
-	splittedPath := strings.Split(path, `.`)
-	for index, pathItem := range splittedPath {
-		if index < len(splittedPath)-1 {
-			if _, ok := currentMap[pathItem]; !ok {
-				currentMap[pathItem] = make(map[string]interface{})
-			}
-			if curr, ok := currentMap[pathItem].(map[string]interface{}); !ok {
-				return errors.New(pathItem + `is not a json object`)
-			} else {
-				currentMap = curr
-			}
-		} else {
-			if m, ok := value.(map[string]interface{}); ok {
-				for key, val := range m {
-					m[key] = sanitizeValue(val)
-				}
-				currentMap[pathItem] = m
-			} else {
-				currentMap[pathItem] = value
-			}
-		}
-	}
-	return nil
-}
-
-func (j Object) Get(path string) interface{} {
-	if o := getFromMap(j, []string{path}...); o != nil {
-		return o
-	}
-	split := strings.Split(path, `.`)
-	return getFromMap(j, split...)
-}
-
-func (j Object) Remove(path string) {
-	index := strings.LastIndex(path, `.`)
-	if index >= 0 {
-		key := path[index+1:]
-		path := path[0:index]
-		val := j.Get(path)
-		if val, ok := val.(map[string]interface{}); ok {
-			delete(val, key)
-			j.Put(path, val)
+			p.err = errors.New(`invalid json`)
 		}
 	} else {
-		delete(j, path)
+		p.err = errors.New(`empty json`)
 	}
+	return p
 }
 
-func (j Object) Clone() Object {
-	cp := Object{}
-	for k, v := range j {
-		if v, ok := v.(Object); ok {
-			cp[k] = v.Clone()
-			continue
-		}
-		cp[k] = v
-	}
-	return cp
+func ParseString(data string) *ParseResult {
+	return Parse([]byte(data))
 }
